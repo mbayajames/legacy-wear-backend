@@ -3,7 +3,15 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../utils/asyncHandler');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// Lazy initialize Stripe to avoid loading env vars at require time
+const getStripe = () => {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY is not defined in environment variables');
+  }
+  return require('stripe')(key);
+};
 
 // @desc    Create new order
 // @route   POST /api/orders

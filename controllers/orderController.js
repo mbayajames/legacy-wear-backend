@@ -168,7 +168,7 @@ exports.createPaymentIntent = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Not authorized', 403));
   }
 
-  const paymentIntent = await stripe.paymentIntents.create({
+  const paymentIntent = await getStripe().paymentIntents.create({
     amount: Math.round(order.totalPrice * 100), // Convert to cents
     currency: 'kes',
     metadata: {

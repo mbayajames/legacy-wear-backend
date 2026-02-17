@@ -39,7 +39,7 @@ if (process.env.NODE_ENV === 'development') {
 
 // Enable CORS
 const corsOptions = {
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL || 'http://localhost:4000',
   credentials: true,
   optionsSuccessStatus: 200,
 };

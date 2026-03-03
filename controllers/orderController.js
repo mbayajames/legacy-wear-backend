@@ -3,7 +3,20 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../utils/asyncHandler');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// Lazy initialize Stripe to avoid loading env vars at require time
+const getStripe = () => {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    return null;
+  }
+  try {
+    return require('stripe')(key);
+  } catch (error) {
+    console.error('Failed to initialize Stripe:', error.message);
+    return null;
+  }
+};
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -168,7 +181,12 @@ exports.createPaymentIntent = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Not authorized', 403));
   }
 
-  const paymentIntent = await getStripe().paymentIntents.create({
+  const stripe = getStripe();
+  if (!stripe) {
+    return next(new ErrorResponse('Payment processing is not available. Please contact support.', 503));
+  }
+
+  const paymentIntent = await stripe.paymentIntents.create({
     amount: Math.round(order.totalPrice * 100), // Convert to cents
     currency: 'kes',
     metadata: {

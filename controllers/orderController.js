@@ -8,9 +8,14 @@ const asyncHandler = require('../utils/asyncHandler');
 const getStripe = () => {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
-    throw new Error('STRIPE_SECRET_KEY is not defined in environment variables');
+    return null;
   }
-  return require('stripe')(key);
+  try {
+    return require('stripe')(key);
+  } catch (error) {
+    console.error('Failed to initialize Stripe:', error.message);
+    return null;
+  }
 };
 
 // @desc    Create new order
@@ -176,7 +181,12 @@ exports.createPaymentIntent = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Not authorized', 403));
   }
 
-  const paymentIntent = await getStripe().paymentIntents.create({
+  const stripe = getStripe();
+  if (!stripe) {
+    return next(new ErrorResponse('Payment processing is not available. Please contact support.', 503));
+  }
+
+  const paymentIntent = await stripe.paymentIntents.create({
     amount: Math.round(order.totalPrice * 100), // Convert to cents
     currency: 'kes',
     metadata: {

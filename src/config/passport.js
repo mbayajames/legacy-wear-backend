@@ -1,79 +1,69 @@
-const JwtStrategy = require('passport-jwt').Strategy;
-const ExtractJwt = require('passport-jwt').ExtractJwt;
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const User = require('../models/User');
+// config/passport.js
+// Passport.js authentication configuration file
+// Sets up multiple authentication strategies for the application
 
-module.exports = (passport) => {
-  // JWT Strategy
-  const jwtOptions = {
-    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-    secretOrKey: process.env.JWT_SECRET,
-  };
+const passport = require('passport');  // Main authentication middleware
+const User = require('../models/User');  // User model for database operations
+const { SESSION } = require('./key');  // Session configuration (though not directly used here)
 
-  passport.use(
-    new JwtStrategy(jwtOptions, async (jwt_payload, done) => {
-      try {
-        const user = await User.findById(jwt_payload.id).select('-password');
-        
-        if (user) {
-          return done(null, user);
-        }
-        return done(null, false);
-      } catch (error) {
-        console.error(error);
-        return done(error, false);
-      }
-    })
-  );
+// Import all authentication strategy modules
+// Each strategy handles a specific authentication method
+const localStrategy = require('../strategies/localStrategy');      // Username/password authentication
+const jwtStrategy = require('../strategies/jwtStrategy');          // JWT token authentication
+const googleStrategy = require('../strategies/googleStrategy');    // Google OAuth authentication
+const facebookStrategy = require('../strategies/facebookStrategy'); // Facebook OAuth authentication
 
-  // Google OAuth Strategy
-  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    passport.use(
-      new GoogleStrategy(
-        {
-          clientID: process.env.GOOGLE_CLIENT_ID,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: process.env.GOOGLE_CALLBACK_URL,
-        },
-        async (accessToken, refreshToken, profile, done) => {
-          try {
-            // Check if user already exists
-            let user = await User.findOne({ 
-              $or: [
-                { googleId: profile.id },
-                { email: profile.emails[0].value }
-              ]
-            });
-
-            if (user) {
-              // Update Google ID if user exists but didn't have it
-              if (!user.googleId) {
-                user.googleId = profile.id;
-                user.isVerified = true;
-                await user.save();
-              }
-              return done(null, user);
-            }
-
-            // Create new user
-            user = await User.create({
-              googleId: profile.id,
-              email: profile.emails[0].value,
-              name: profile.displayName,
-              firstName: profile.name.givenName,
-              lastName: profile.name.familyName,
-              avatar: profile.photos[0]?.value,
-              isVerified: true,
-              authProvider: 'google',
-            });
-
-            done(null, user);
-          } catch (error) {
-            console.error('Google Strategy Error:', error);
-            done(error, false);
-          }
-        }
-      )
-    );
-  }
+/**
+ * Initialize all Passport.js authentication strategies
+ * This function configures Passport with all available authentication methods
+ */
+const initializePassport = () => {
+  console.log('🛡️ Initializing authentication strategies...');
+  
+  // Register each strategy with Passport
+  // Each strategy function receives the passport instance and configures its specific strategy
+  localStrategy(passport);      // Sets up LocalStrategy for email/password login
+  jwtStrategy(passport);        // Sets up JWTStrategy for token-based authentication
+  googleStrategy(passport);     // Sets up Google OAuth2 strategy
+  facebookStrategy(passport);   // Sets up Facebook OAuth strategy
+  
+  /**
+   * User Serialization (Session-based authentication only)
+   * Determines what user data should be stored in the session
+   * Called when user authenticates successfully
+   * Stores only the user ID in the session to minimize session size
+   * 
+   * @param {Object} user - The authenticated user object
+   * @param {Function} done - Callback function (error, id)
+   */
+  passport.serializeUser((user, done) => {
+    done(null, user.id);  // Store only user ID in session
+  });
+  
+  /**
+   * User Deserialization (Session-based authentication only)
+   * Retrieves full user object from database using ID stored in session
+   * Called on every request that requires authentication
+   * Populates req.user with the full user object
+   * 
+   * @param {string} id - User ID stored in session
+   * @param {Function} done - Callback function (error, user)
+   */
+  passport.deserializeUser(async (id, done) => {
+    try {
+      // Fetch complete user data from database (excluding password)
+      const user = await User.findById(id).select('-password');
+      done(null, user);  // Attach user to request object (req.user)
+    } catch (error) {
+      done(error, null);  // Handle errors (e.g., database issues)
+    }
+  });
+  
+  console.log('✅ All authentication strategies initialized');
 };
+
+// Execute initialization immediately when this module is loaded
+initializePassport();
+
+// Export configured passport instance for use in main application
+module.exports = passport;

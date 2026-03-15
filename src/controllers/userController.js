@@ -1,311 +1,257 @@
-const User = require('../models/User');
-const ErrorResponse = require('../utils/errorResponse');
-const asyncHandler = require('../utils/asyncHandler');
+// controllers/userController.js
+// User management controller - handles admin operations for user management
+// Includes CRUD operations, statistics, and bulk updates (all admin-only except where noted)
 
-// @desc    Update user profile
-// @route   PUT /api/users/profile
-// @access  Private
-exports.updateProfile = asyncHandler(async (req, res, next) => {
-  const fieldsToUpdate = {
-    name: req.body.name,
-    email: req.body.email,
-    phoneNumber: req.body.phoneNumber,
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-  };
+const User = require('../models/User');              // User model for database operations
+const AppError = require('../utils/AppError');       // Custom error class
+const catchAsync = require('../utils/catchAsync');   // Wrapper to catch async errors
+const APIFeatures = require('../utils/apiFeatures'); // Query builder for filtering, sorting, pagination
 
-  // Remove undefined fields
-  Object.keys(fieldsToUpdate).forEach(
-    (key) => fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]
-  );
-
-  const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
-    new: true,
-    runValidators: true,
-  });
-
+// ========== GET ALL USERS (Admin only) ==========
+/**
+ * Get all users with filtering, sorting, and pagination
+ * GET /api/users
+ * Query params: ?page=1&limit=10&sort=-createdAt&fields=name,email&role=user
+ * (Admin only)
+ */
+exports.getAllUsers = catchAsync(async (req, res) => {
+  // Build query using APIFeatures utility
+  // This handles filtering, sorting, field selection, and pagination from query string
+  const features = new APIFeatures(User.find(), req.query)
+    .filter()      // Filter by query params (e.g., ?role=admin)
+    .sort()        // Sort results (e.g., ?sort=-createdAt)
+    .limitFields() // Select specific fields (e.g., ?fields=name,email)
+    .paginate();   // Paginate results (e.g., ?page=2&limit=10)
+  
+  // Execute the query
+  const users = await features.query;
+  
+  // Get total count for pagination metadata
+  const total = await User.countDocuments();
+  
   res.status(200).json({
-    success: true,
-    data: user,
+    status: 'success',
+    results: users.length,      // Number of users in this page
+    total,                       // Total number of users in database
+    data: { users }               // Array of user documents
   });
 });
 
-// @desc    Change password
-// @route   PUT /api/users/change-password
-// @access  Private
-exports.changePassword = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id).select('+password');
-
-  // Check current password
-  const isMatch = await user.matchPassword(req.body.currentPassword);
-
-  if (!isMatch) {
-    return next(new ErrorResponse('Current password is incorrect', 401));
+// ========== GET USER BY ID (Admin only) ==========
+/**
+ * Get single user by ID with sensitive fields excluded
+ * GET /api/users/:id
+ * (Admin only)
+ */
+exports.getUser = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.id)
+    .select('-__v -passwordResetToken -passwordResetExpires -emailVerificationToken');
+  // Exclude: version key, password reset fields, email verification fields
+  
+  if (!user) {
+    return next(new AppError('No user found with that ID', 404));
   }
-
-  user.password = req.body.newPassword;
-  await user.save();
-
+  
   res.status(200).json({
-    success: true,
-    message: 'Password changed successfully',
+    status: 'success',
+    data: { user }
   });
 });
 
-// @desc    Update user avatar
-// @route   PUT /api/users/avatar
-// @access  Private
-exports.updateAvatar = asyncHandler(async (req, res, next) => {
-  const user = await User.findByIdAndUpdate(
-    req.user.id,
-    { avatar: req.body.avatar },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
-
-  res.status(200).json({
-    success: true,
-    data: user,
-  });
-});
-
-// @desc    Get user addresses
-// @route   GET /api/users/addresses
-// @access  Private
-exports.getAddresses = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-
-  res.status(200).json({
-    success: true,
-    data: user.addresses,
-  });
-});
-
-// @desc    Add address
-// @route   POST /api/users/addresses
-// @access  Private
-exports.addAddress = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-
-  // If this is set as default, unset other defaults
-  if (req.body.isDefault) {
-    user.addresses.forEach((addr) => (addr.isDefault = false));
+// ========== CREATE USER (Admin only) ==========
+/**
+ * Create a new user manually (admin creates account for someone)
+ * POST /api/users
+ * Body: { name, email, password, role }
+ * (Admin only)
+ */
+exports.createUser = catchAsync(async (req, res, next) => {
+  const { name, email, password, role } = req.body;
+  
+  // Check if user already exists
+  const existingUser = await User.findOne({ email: email.toLowerCase() });
+  if (existingUser) {
+    return next(new AppError('User already exists with this email', 400));
   }
-
-  // If this is the first address, make it default
-  if (user.addresses.length === 0) {
-    req.body.isDefault = true;
-  }
-
-  user.addresses.push(req.body);
-  await user.save();
-
+  
+  // Create user with optional role (defaults to 'user')
+  const user = await User.create({
+    name,
+    email: email.toLowerCase(), // Normalize email to lowercase
+    password,
+    role: role || 'user',
+    isEmailVerified: true // Admin-created users are auto-verified (no email needed)
+  });
+  
+  // Remove password from response
+  user.password = undefined;
+  
   res.status(201).json({
-    success: true,
-    data: user.addresses,
+    status: 'success',
+    data: { user }
   });
 });
 
-// @desc    Update address
-// @route   PUT /api/users/addresses/:addressId
-// @access  Private
-exports.updateAddress = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-  const address = user.addresses.id(req.params.addressId);
-
-  if (!address) {
-    return next(new ErrorResponse('Address not found', 404));
+// ========== UPDATE USER (Admin only) ==========
+/**
+ * Update user details (except password)
+ * PATCH /api/users/:id
+ * Body: { name, email, role, active, etc. }
+ * (Admin only)
+ */
+exports.updateUser = catchAsync(async (req, res, next) => {
+  // Prevent password update through this route (use dedicated password endpoint)
+  if (req.body.password) {
+    return next(new AppError('Cannot update password through this route. Use /update-password', 400));
   }
-
-  // If setting as default, unset other defaults
-  if (req.body.isDefault) {
-    user.addresses.forEach((addr) => (addr.isDefault = false));
-  }
-
-  Object.assign(address, req.body);
-  await user.save();
-
-  res.status(200).json({
-    success: true,
-    data: user.addresses,
-  });
-});
-
-// @desc    Delete address
-// @route   DELETE /api/users/addresses/:addressId
-// @access  Private
-exports.deleteAddress = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
   
-  // Use pull to remove the address
-  user.addresses.pull(req.params.addressId);
-  
-  // If deleted address was default and there are other addresses, make first one default
-  const hasDefault = user.addresses.some((addr) => addr.isDefault);
-  if (!hasDefault && user.addresses.length > 0) {
-    user.addresses[0].isDefault = true;
-  }
-
-  await user.save();
-
-  res.status(200).json({
-    success: true,
-    data: user.addresses,
-  });
-});
-
-// @desc    Get wishlist
-// @route   GET /api/users/wishlist
-// @access  Private
-exports.getWishlist = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id).populate({
-    path: 'wishlist',
-    select: 'name price images category rating',
-  });
-
-  res.status(200).json({
-    success: true,
-    data: user.wishlist,
-  });
-});
-
-// @desc    Add to wishlist
-// @route   POST /api/users/wishlist/:productId
-// @access  Private
-exports.addToWishlist = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-
-  if (user.wishlist.includes(req.params.productId)) {
-    return next(new ErrorResponse('Product already in wishlist', 400));
-  }
-
-  user.wishlist.push(req.params.productId);
-  await user.save();
-
-  await user.populate({
-    path: 'wishlist',
-    select: 'name price images category rating',
-  });
-
-  res.status(200).json({
-    success: true,
-    data: user.wishlist,
-  });
-});
-
-// @desc    Remove from wishlist
-// @route   DELETE /api/users/wishlist/:productId
-// @access  Private
-exports.removeFromWishlist = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-
-  user.wishlist.pull(req.params.productId);
-  await user.save();
-
-  await user.populate({
-    path: 'wishlist',
-    select: 'name price images category rating',
-  });
-
-  res.status(200).json({
-    success: true,
-    data: user.wishlist,
-  });
-});
-
-// @desc    Delete account
-// @route   DELETE /api/users/account
-// @access  Private
-exports.deleteAccount = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-
-  user.accountStatus = 'deleted';
-  await user.save();
-
-  res.status(200).json({
-    success: true,
-    message: 'Account deleted successfully',
-  });
-});
-
-// @desc    Get all users (Admin)
-// @route   GET /api/users
-// @access  Private/Admin
-exports.getUsers = asyncHandler(async (req, res, next) => {
-  const page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 20;
-  const skip = (page - 1) * limit;
-
-  const users = await User.find({ accountStatus: 'active' })
-    .select('-password')
-    .limit(limit)
-    .skip(skip)
-    .sort('-createdAt');
-
-  const total = await User.countDocuments({ accountStatus: 'active' });
-
-  res.status(200).json({
-    success: true,
-    count: users.length,
-    total,
-    page,
-    pages: Math.ceil(total / limit),
-    data: users,
-  });
-});
-
-// @desc    Get single user (Admin)
-// @route   GET /api/users/:id
-// @access  Private/Admin
-exports.getUser = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.params.id).select('-password');
-
-  if (!user) {
-    return next(new ErrorResponse('User not found', 404));
-  }
-
-  res.status(200).json({
-    success: true,
-    data: user,
-  });
-});
-
-// @desc    Update user (Admin)
-// @route   PUT /api/users/:id
-// @access  Private/Admin
-exports.updateUser = asyncHandler(async (req, res, next) => {
+  // Update user with provided fields
   const user = await User.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-
+    new: true,              // Return updated document
+    runValidators: true     // Run schema validators
+  }).select('-__v -passwordResetToken -passwordResetExpires');
+  
   if (!user) {
-    return next(new ErrorResponse('User not found', 404));
+    return next(new AppError('No user found with that ID', 404));
   }
-
+  
   res.status(200).json({
-    success: true,
-    data: user,
+    status: 'success',
+    data: { user }
   });
 });
 
-// @desc    Delete user (Admin)
-// @route   DELETE /api/users/:id
-// @access  Private/Admin
-exports.deleteUser = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.params.id);
-
+// ========== DELETE USER (Admin only) ==========
+/**
+ * Permanently delete a user from database
+ * DELETE /api/users/:id
+ * (Admin only - use with caution!)
+ */
+exports.deleteUser = catchAsync(async (req, res, next) => {
+  const user = await User.findByIdAndDelete(req.params.id);
+  
   if (!user) {
-    return next(new ErrorResponse('User not found', 404));
+    return next(new AppError('No user found with that ID', 404));
   }
+  
+  // 204 No Content - successful deletion, no response body
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
 
-  user.accountStatus = 'deleted';
-  await user.save();
-
+// ========== GET USER STATS (Admin only) ==========
+/**
+ * Get user statistics and breakdown by role
+ * GET /api/users/stats
+ * (Admin only)
+ */
+exports.getUserStats = catchAsync(async (req, res) => {
+  // Aggregate pipeline to get statistics by role
+  const stats = await User.aggregate([
+    {
+      // Group by user role
+      $group: {
+        _id: '$role',        // Group by role field
+        count: { $sum: 1 },   // Total users in this role
+        
+        // Count users with verified email
+        verifiedCount: {
+          $sum: { $cond: ['$isEmailVerified', 1, 0] }
+        },
+        
+        // Count active users
+        activeCount: {
+          $sum: { $cond: ['$active', 1, 0] }
+        }
+      }
+    },
+    {
+      // Add calculated fields
+      $project: {
+        role: '$_id',         // Rename _id to role
+        count: 1,
+        verifiedCount: 1,
+        activeCount: 1,
+        // Calculate unverified users
+        unverifiedCount: { $subtract: ['$count', '$verifiedCount'] },
+        // Calculate inactive users
+        inactiveCount: { $subtract: ['$count', '$activeCount'] }
+      }
+    }
+  ]);
+  
+  // Get total users across all roles
+  const totalUsers = await User.countDocuments();
+  
+  // Get users registered today (since midnight)
+  const newUsersToday = await User.countDocuments({
+    createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
+  });
+  
   res.status(200).json({
-    success: true,
-    message: 'User deleted successfully',
+    status: 'success',
+    data: {
+      total: totalUsers,
+      newToday: newUsersToday,
+      breakdown: stats  // Array of stats by role
+    }
+  });
+});
+
+// ========== GET USER ACTIVITY ==========
+/**
+ * Get user activity timestamps (login, last active, etc.)
+ * GET /api/users/:id/activity
+ * (Admin only - for monitoring)
+ */
+exports.getUserActivity = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.id)
+    .select('lastLogin lastActive createdAt updatedAt');
+  
+  if (!user) {
+    return next(new AppError('No user found with that ID', 404));
+  }
+  
+  res.status(200).json({
+    status: 'success',
+    data: {
+      lastLogin: user.lastLogin,
+      lastActive: user.lastActive,
+      joinedAt: user.createdAt,
+      lastUpdated: user.updatedAt
+    }
+  });
+});
+
+// ========== BULK UPDATE USERS (Admin only) ==========
+/**
+ * Update multiple users at once
+ * POST /api/users/bulk-update
+ * Body: { userIds: [id1, id2, ...], updates: { role: 'admin', active: true } }
+ * (Admin only - powerful operation!)
+ */
+exports.bulkUpdateUsers = catchAsync(async (req, res, next) => {
+  const { userIds, updates } = req.body;
+  
+  // Validate input
+  if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+    return next(new AppError('Please provide an array of user IDs', 400));
+  }
+  
+  // Perform bulk update
+  const result = await User.updateMany(
+    { _id: { $in: userIds } },  // Match any of these IDs
+    updates,                      // Apply these updates
+    { runValidators: true }       // Validate data
+  );
+  
+  res.status(200).json({
+    status: 'success',
+    data: {
+      matched: result.matchedCount,   // Number of documents matched
+      modified: result.modifiedCount   // Number of documents actually modified
+    }
   });
 });

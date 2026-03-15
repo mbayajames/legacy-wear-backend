@@ -43,10 +43,8 @@ module.exports = (passport) => {
           // ==================== 2️⃣ FIND USER BY EMAIL ====================
           // Query database for user with this email
           // .select('+field') includes fields that are normally excluded in schema
-          // populate('cart') loads the user's cart data for immediate use
           const user = await User.findOne({ email: email.toLowerCase() })  // Normalize email to lowercase
-            .select('+password +failedLoginAttempts +lockUntil')  // Explicitly include protected fields
-            .populate('cart');  // Populate cart reference with actual cart data
+            .select('+password +failedLoginAttempts +lockUntil');  // Explicitly include protected fields
 
           // ==================== 3️⃣ USER EXISTENCE CHECK ====================
           // If no user found with this email
@@ -69,7 +67,7 @@ module.exports = (passport) => {
 
           // ==================== 5️⃣ ACCOUNT ACTIVE CHECK ====================
           // Check if admin has deactivated this account
-          if (!user.active) {
+          if (user.accountStatus && user.accountStatus !== 'active') {
             return done(null, false, { 
               message: 'Account deactivated. Please contact support' 
             });
@@ -77,7 +75,7 @@ module.exports = (passport) => {
 
           // ==================== 6️⃣ PASSWORD VERIFICATION ====================
           // Compare provided password with stored hash using schema method
-          const isPasswordValid = await user.comparePassword(password);
+          const isPasswordValid = await user.matchPassword(password);
           
           if (!isPasswordValid) {
             // ---------- BRUTE FORCE PROTECTION ----------
@@ -112,7 +110,7 @@ module.exports = (passport) => {
 
           // ==================== 8️⃣ EMAIL VERIFICATION CHECK ====================
           // If email verification is enabled, check if user has verified their email
-          if (!user.isEmailVerified && FEATURES.ENABLED.EMAIL_SERVICE) {
+          if (!user.isVerified && FEATURES.ENABLED.EMAIL_SERVICE) {
             return done(null, false, { 
               message: 'Please verify your email before logging in',
               needsVerification: true,  // Flag for frontend to show verification UI

@@ -1,263 +1,333 @@
-const sendEmail = require('../utils/sendEmail');
+// services/emailService.js
+// Email service - handles all email sending operations using Nodemailer and Handlebars templates
+// Provides various email templates for different scenarios (welcome, verification, orders, alerts)
 
-class EmailService {
-  // Welcome email
-  static async sendWelcomeEmail(user, verificationUrl) {
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-          .content { background: #f9f9f9; padding: 30px; }
-          .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Welcome to Legacy Wear!</h1>
-          </div>
-          <div class="content">
-            <p>Hi ${user.name},</p>
-            <p>Thank you for joining Legacy Wear - your destination for timeless fashion.</p>
-            <p>To get started, please verify your email address by clicking the button below:</p>
-            <p style="text-align: center;">
-              <a href="${verificationUrl}" class="button">Verify Email Address</a>
-            </p>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #667eea;">${verificationUrl}</p>
-            <p>This link will expire in 24 hours.</p>
-            <p>If you didn't create an account with Legacy Wear, please ignore this email.</p>
-          </div>
-          <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} Legacy Wear. All rights reserved.</p>
-            <p>Need help? Contact us at support@legacywear.com</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+const nodemailer = require('nodemailer');           // Email sending library
+const handlebars = require('handlebars');           // Template engine for emails
+const fs = require('fs').promises;                  // File system operations (promise version)
+const path = require('path');                        // Path manipulation
+const { EMAIL, SERVER } = require('../config/key'); // Email configuration
+const AppError = require('../utils/AppError');      // Custom error class
 
-    await sendEmail({
-      email: user.email,
-      subject: 'Welcome to Legacy Wear - Verify Your Email',
-      html,
+// ========== EMAIL TRANSPORTER ==========
+// Singleton pattern - only one transporter instance
+let transporter = null;
+
+/**
+ * Get or create email transporter
+ * Uses singleton pattern to reuse connection
+ */
+const getTransporter = () => {
+  if (transporter) return transporter;
+  
+  // Create transporter using config from key.js
+  transporter = nodemailer.createTransport(EMAIL.getTransporterConfig());
+  
+  // Verify connection if using real email credentials
+  if (EMAIL.USERNAME && EMAIL.PASSWORD) {
+    transporter.verify((error, success) => {
+      if (error) {
+        console.error('❌ Email transporter verification failed:', error);
+      } else {
+        console.log('✅ Email transporter ready');
+      }
     });
   }
+  
+  return transporter;
+};
 
-  // Password reset email
-  static async sendPasswordResetEmail(user, resetUrl) {
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-          .content { background: #f9f9f9; padding: 30px; }
-          .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-          .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
-          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Password Reset Request</h1>
-          </div>
-          <div class="content">
-            <p>Hi ${user.name},</p>
-            <p>We received a request to reset your password for your Legacy Wear account.</p>
-            <p>Click the button below to reset your password:</p>
-            <p style="text-align: center;">
-              <a href="${resetUrl}" class="button">Reset Password</a>
-            </p>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #667eea;">${resetUrl}</p>
-            <div class="warning">
-              <strong>⚠️ Security Notice:</strong>
-              <ul>
-                <li>This link will expire in 10 minutes</li>
-                <li>If you didn't request this, please ignore this email</li>
-                <li>Your password won't change until you create a new one</li>
-              </ul>
-            </div>
-          </div>
-          <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} Legacy Wear. All rights reserved.</p>
-            <p>This is an automated email, please do not reply.</p>
-          </div>
-        </div>
-      </body>
-      </html>
+// ========== LOAD AND COMPILE TEMPLATE ==========
+/**
+ * Load Handlebars template from file and compile with data
+ * Falls back to basic HTML if template not found
+ * 
+ * @param {string} templateName - Name of template file (without .hbs)
+ * @param {Object} data - Data to inject into template
+ * @returns {Promise<string>} Rendered HTML
+ */
+const loadTemplate = async (templateName, data) => {
+  try {
+    // Construct path to template file
+    const templatePath = path.join(__dirname, '../utils/emailTemplates', `${templateName}.hbs`);
+    // Read template file
+    const templateContent = await fs.readFile(templatePath, 'utf-8');
+    // Compile template with Handlebars
+    const template = handlebars.compile(templateContent);
+    // Render with data
+    return template(data);
+  } catch (error) {
+    // Log error but don't crash - provide fallback
+    console.error(`Failed to load email template ${templateName}:`, error);
+    // Basic fallback HTML
+    return `
+      <h1>${data.title || 'Legacy Wear'}</h1>
+      <p>${data.message || 'No message provided'}</p>
     `;
-
-    await sendEmail({
-      email: user.email,
-      subject: 'Password Reset Request - Legacy Wear',
-      html,
-    });
   }
+};
 
-  // Order confirmation email
-  static async sendOrderConfirmationEmail(user, order) {
-    const itemsList = order.orderItems
-      .map(
-        (item) =>
-          `<tr>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.name}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">KES ${item.price.toLocaleString()}</td>
-          </tr>`
-      )
-      .join('');
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-          .content { background: #f9f9f9; padding: 30px; }
-          .order-details { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          .total { font-size: 18px; font-weight: bold; color: #667eea; }
-          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Order Confirmed!</h1>
-            <p>Thank you for your purchase</p>
-          </div>
-          <div class="content">
-            <p>Hi ${user.name},</p>
-            <p>Your order has been confirmed and will be shipped soon.</p>
-            
-            <div class="order-details">
-              <h2>Order #${order.orderNumber}</h2>
-              <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
-              
-              <h3>Items Ordered:</h3>
-              <table>
-                <thead>
-                  <tr style="background: #f5f5f5;">
-                    <th style="padding: 10px; text-align: left;">Item</th>
-                    <th style="padding: 10px; text-align: center;">Qty</th>
-                    <th style="padding: 10px; text-align: right;">Price</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${itemsList}
-                </tbody>
-              </table>
-              
-              <table style="margin-top: 20px;">
-                <tr>
-                  <td>Subtotal:</td>
-                  <td style="text-align: right;">KES ${order.itemsPrice.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <td>Tax:</td>
-                  <td style="text-align: right;">KES ${order.taxPrice.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <td>Shipping:</td>
-                  <td style="text-align: right;">KES ${order.shippingPrice.toLocaleString()}</td>
-                </tr>
-                <tr class="total">
-                  <td>Total:</td>
-                  <td style="text-align: right;">KES ${order.totalPrice.toLocaleString()}</td>
-                </tr>
-              </table>
-
-              <h3>Shipping Address:</h3>
-              <p>
-                ${order.shippingAddress.fullName}<br>
-                ${order.shippingAddress.addressLine1}<br>
-                ${order.shippingAddress.addressLine2 ? order.shippingAddress.addressLine2 + '<br>' : ''}
-                ${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.postalCode}<br>
-                ${order.shippingAddress.country}<br>
-                Phone: ${order.shippingAddress.phoneNumber}
-              </p>
-            </div>
-
-            <p>We'll send you a shipping confirmation email once your order is on its way.</p>
-            <p>Track your order anytime by logging into your account.</p>
-          </div>
-          <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} Legacy Wear. All rights reserved.</p>
-            <p>Questions? Contact us at support@legacywear.com</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    await sendEmail({
-      email: user.email,
-      subject: `Order Confirmation - ${order.orderNumber}`,
-      html,
-    });
+// ========== BASE EMAIL SENDER ==========
+/**
+ * Core email sending function
+ * All other email functions use this
+ * 
+ * @param {Object} options - Email options
+ * @param {string} options.to - Recipient email
+ * @param {string} options.subject - Email subject
+ * @param {string} options.html - HTML content
+ * @param {string} options.text - Plain text content (optional)
+ * @param {Array} options.attachments - File attachments (optional)
+ * @returns {Promise<Object>} Nodemailer info object
+ */
+const sendEmail = async (options) => {
+  try {
+    const transporter = getTransporter();
+    
+    const mailOptions = {
+      from: EMAIL.FROM,                 // Sender from config
+      to: options.to,                    // Recipient
+      subject: options.subject,           // Subject line
+      text: options.text,                 // Plain text version
+      html: options.html,                 // HTML version
+      attachments: options.attachments || [] // Attachments
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    
+    // If using ethereal.email (test), log preview URL
+    if (!EMAIL.USERNAME || !EMAIL.PASSWORD) {
+      console.log('📧 Email preview URL:', nodemailer.getTestMessageUrl(info));
+    }
+    
+    return info;
+  } catch (error) {
+    console.error('❌ Failed to send email:', error);
+    throw new AppError('Failed to send email', 500);
   }
+};
 
-  // Order shipped notification
-  static async sendOrderShippedEmail(user, order) {
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-          .content { background: #f9f9f9; padding: 30px; }
-          .tracking-box { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; text-align: center; }
-          .tracking-number { font-size: 24px; font-weight: bold; color: #667eea; margin: 10px 0; }
-          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Your Order is on the Way! 📦</h1>
-          </div>
-          <div class="content">
-            <p>Hi ${user.name},</p>
-            <p>Great news! Your order #${order.orderNumber} has been shipped.</p>
-            
-            <div class="tracking-box">
-              <p><strong>Tracking Number:</strong></p>
-              <div class="tracking-number">${order.trackingNumber}</div>
-              <p><strong>Carrier:</strong> ${order.carrier}</p>
-              ${order.estimatedDelivery ? `<p><strong>Estimated Delivery:</strong> ${new Date(order.estimatedDelivery).toLocaleDateString()}</p>` : ''}
-            </div>
+// ========== WELCOME EMAIL ==========
+/**
+ * Send welcome email to new users
+ * @param {Object} user - User object
+ */
+const sendWelcomeEmail = async (user) => {
+  const html = await loadTemplate('welcome', {
+    name: user.name,
+    email: user.email,
+    loginUrl: `${SERVER.FRONTEND_URL}/login`,
+    year: new Date().getFullYear()
+  });
+  
+  return sendEmail({
+    to: user.email,
+    subject: 'Welcome to Legacy Wear!',
+    html
+  });
+};
 
-            <p>You can track your package using the tracking number above on the carrier's website.</p>
-            <p>We'll notify you once your package is delivered.</p>
-          </div>
-          <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} Legacy Wear. All rights reserved.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+// ========== EMAIL VERIFICATION ==========
+/**
+ * Send email verification link
+ * @param {Object} user - User object
+ * @param {string} token - Verification token
+ */
+const sendEmailVerificationEmail = async (user, token) => {
+  const verificationUrl = `${SERVER.FRONTEND_URL}/verify-email/${token}`;
+  
+  const html = await loadTemplate('emailVerification', {
+    name: user.name,
+    verificationUrl,
+    expiryHours: 24,  // Token expires in 24 hours
+    year: new Date().getFullYear()
+  });
+  
+  return sendEmail({
+    to: user.email,
+    subject: 'Verify Your Email - Legacy Wear',
+    html
+  });
+};
 
-    await sendEmail({
-      email: user.email,
-      subject: `Your Order Has Been Shipped - ${order.orderNumber}`,
-      html,
-    });
-  }
-}
+// ========== PASSWORD RESET EMAIL ==========
+/**
+ * Send password reset link
+ * @param {Object} user - User object
+ * @param {string} token - Reset token
+ */
+const sendPasswordResetEmail = async (user, token) => {
+  const resetUrl = `${SERVER.FRONTEND_URL}/reset-password/${token}`;
+  
+  const html = await loadTemplate('passwordReset', {
+    name: user.name,
+    resetUrl,
+    expiryMinutes: 10,  // Token expires in 10 minutes
+    year: new Date().getFullYear()
+  });
+  
+  return sendEmail({
+    to: user.email,
+    subject: 'Password Reset Request - Legacy Wear',
+    html
+  });
+};
 
-module.exports = EmailService;
+// ========== ORDER CONFIRMATION EMAIL ==========
+/**
+ * Send order confirmation with details
+ * @param {Object} user - User object
+ * @param {Object} order - Order object
+ */
+const sendOrderConfirmationEmail = async (user, order) => {
+  const orderUrl = `${SERVER.FRONTEND_URL}/orders/${order._id}`;
+  
+  const html = await loadTemplate('orderConfirmation', {
+    name: user.name,
+    orderNumber: order.orderNumber,
+    orderDate: new Date(order.createdAt).toLocaleDateString(),
+    items: order.items.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price.toLocaleString(),
+      total: (item.price * item.quantity).toLocaleString()
+    })),
+    subtotal: order.subtotal.toLocaleString(),
+    shipping: order.shippingCost.toLocaleString(),
+    tax: order.taxAmount.toLocaleString(),
+    discount: order.discountAmount.toLocaleString(),
+    total: order.totalAmount.toLocaleString(),
+    orderUrl,
+    year: new Date().getFullYear()
+  });
+  
+  return sendEmail({
+    to: user.email,
+    subject: `Order Confirmation #${order.orderNumber} - Legacy Wear`,
+    html
+  });
+};
+
+// ========== SHIPPING UPDATE EMAIL ==========
+/**
+ * Send shipping status update
+ * @param {Object} order - Order object
+ */
+const sendShippingUpdateEmail = async (order) => {
+  // Get user details
+  const user = await require('../models/User').findById(order.user);
+  
+  // Create tracking URL (either provided or order tracking page)
+  const trackingUrl = order.trackingUrl || `${SERVER.FRONTEND_URL}/orders/track/${order.orderNumber}`;
+  
+  // Status messages for different order states
+  const statusMessages = {
+    pending: 'Your order is being processed.',
+    confirmed: 'Your order has been confirmed.',
+    processing: 'Your order is being prepared for shipment.',
+    shipped: 'Your order has been shipped!',
+    delivered: 'Your order has been delivered!',
+    cancelled: 'Your order has been cancelled.'
+  };
+  
+  const html = await loadTemplate('shippingUpdate', {
+    name: user.name,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    statusMessage: statusMessages[order.status] || 'Your order status has been updated.',
+    trackingNumber: order.trackingNumber,
+    trackingUrl,
+    estimatedDelivery: order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString() : 'Not available',
+    year: new Date().getFullYear()
+  });
+  
+  return sendEmail({
+    to: user.email,
+    subject: `Order Update #${order.orderNumber} - Legacy Wear`,
+    html
+  });
+};
+
+// ========== LOW STOCK ALERT EMAIL ==========
+/**
+ * Send low stock alert to admins
+ * @param {Object} product - Product object
+ * @param {Object} inventory - Inventory object
+ */
+const sendLowStockAlertEmail = async (product, inventory) => {
+  // Get admin emails from env or use default
+  const adminEmails = process.env.ADMIN_EMAILS?.split(',') || ['admin@legacywear.com'];
+  
+  const html = await loadTemplate('lowStockAlert', {
+    productName: product.name,
+    sku: inventory.sku,
+    currentStock: inventory.availableQuantity,
+    reorderPoint: inventory.reorderPoint,
+    location: inventory.location,
+    productUrl: `${SERVER.FRONTEND_URL}/admin/products/${product._id}`,
+    year: new Date().getFullYear()
+  });
+  
+  return sendEmail({
+    to: adminEmails,
+    subject: `⚠️ Low Stock Alert: ${product.name}`,
+    html
+  });
+};
+
+// ========== CONTACT FORM EMAIL ==========
+/**
+ * Send contact form submission to admin
+ * @param {Object} data - Form data { name, email, subject, message }
+ */
+const sendContactFormEmail = async (data) => {
+  const { name, email, subject, message } = data;
+  
+  const html = await loadTemplate('contactForm', {
+    name,
+    email,
+    subject,
+    message,
+    year: new Date().getFullYear()
+  });
+  
+  return sendEmail({
+    to: process.env.CONTACT_EMAIL || 'contact@legacywear.com',
+    replyTo: email,  // So admin can reply directly to user
+    subject: `Contact Form: ${subject}`,
+    html
+  });
+};
+
+// ========== NEWSLETTER CONFIRMATION EMAIL ==========
+/**
+ * Send newsletter subscription confirmation
+ * @param {string} email - Subscriber email
+ */
+const sendNewsletterConfirmationEmail = async (email) => {
+  const unsubscribeUrl = `${SERVER.FRONTEND_URL}/newsletter/unsubscribe?email=${encodeURIComponent(email)}`;
+  
+  const html = await loadTemplate('newsletterConfirmation', {
+    email,
+    unsubscribeUrl,
+    year: new Date().getFullYear()
+  });
+  
+  return sendEmail({
+    to: email,
+    subject: 'Newsletter Subscription Confirmed - Legacy Wear',
+    html
+  });
+};
+
+module.exports = {
+  sendEmail,
+  sendWelcomeEmail,
+  sendEmailVerificationEmail,
+  sendPasswordResetEmail,
+  sendOrderConfirmationEmail,
+  sendShippingUpdateEmail,
+  sendLowStockAlertEmail,
+  sendContactFormEmail,
+  sendNewsletterConfirmationEmail
+};

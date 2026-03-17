@@ -255,6 +255,7 @@ const formatPaymentResponse = (payment) => {
   };
 };
 
+
 module.exports = {
   processMpesaPayment,
   queryMpesaPaymentStatus,

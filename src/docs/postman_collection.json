@@ -1,0 +1,1266 @@
+{
+  
+  "info": {
+    "name": "Legacy Wear API",                    
+    "description": "Legacy Wear E-commerce Platform API Collection", 
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"                            
+  },
+  
+
+  "item": [
+    {
+      "name": "Auth",                            
+      "item": [                                  
+        {
+          "name": "Register",                    
+          "request": {                           
+            "method": "POST",                    
+            "header": [                          
+              {
+                "key": "Content-Type",
+                "value": "application/json"      
+              }
+            ],
+            "body": {                            
+              "mode": "raw",                     
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"Password123\",\n  \"passwordConfirm\": \"Password123\"\n}" 
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",  
+              "host": ["{{base_url}}"],              
+              "path": ["auth", "register"]           
+            }
+          }
+        },
+        {
+          "name": "Login",                       
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"Password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",          
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",    
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",             
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Updated\",\n  \"avatar\": \"https://example.com/avatar.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/update-me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "update-me"]
+            }
+          }
+        },
+        {
+          "name": "Update Password",            
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password123\",\n  \"newPassword\": \"NewPassword123\",\n  \"passwordConfirm\": \"NewPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/update-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "update-password"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",            
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/forgot-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Logout",                    
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    
+    
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",          
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products?page=1&limit=20",  
+              "host": ["{{base_url}}"],
+              "path": ["products"],
+              "query": [                       
+                {
+                  "key": "page",
+                  "value": "1"                 
+                },
+                {
+                  "key": "limit",
+                  "value": "20"                
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Products",           
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/search?q=leather&minPrice=1000&maxPrice=10000",
+              "host": ["{{base_url}}"],
+              "path": ["products", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "leather"          
+                },
+                {
+                  "key": "minPrice",
+                  "value": "1000"              
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "10000"             
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Featured Products",     
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/featured?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["products", "featured"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"               
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get On-Sale Products",      
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/on-sale?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["products", "on-sale"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product by Slug",       
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/slug/premium-leather-jacket",
+              "host": ["{{base_url}}"],
+              "path": ["products", "slug", "premium-leather-jacket"]
+            }
+          }
+        },
+        {
+          "name": "Get Products by Category",  
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/category/mens-clothing",
+              "host": ["{{base_url}}"],
+              "path": ["products", "category", "mens-clothing"]
+            }
+          }
+        },
+        {
+          "name": "Get Related Products",      
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/60d5f9f8b8e5a72d4c8b4567/related",
+              "host": ["{{base_url}}"],
+              "path": ["products", "60d5f9f8b8e5a72d4c8b4567", "related"]
+            }
+          }
+        },
+        {
+          "name": "Create Product (Admin)",    
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"   
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Premium Leather Jacket\",\n  \"description\": \"High-quality genuine leather jacket\",\n  \"price\": 4999,\n  \"compareAtPrice\": 6999,\n  \"category\": \"60d5f9f8b8e5a72d4c8b4567\",\n  \"stock\": 50,\n  \"sizes\": [\"S\", \"M\", \"L\", \"XL\"],\n  \"isFeatured\": true,\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": ["{{base_url}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Update Product (Admin)",    
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 4499,\n  \"discountPercentage\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["products", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        },
+        {
+          "name": "Delete Product (Admin)",    
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["products", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        }
+      ]
+    },
+    
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart",
+              "host": ["{{base_url}}"],
+              "path": ["cart"]
+            }
+          }
+        },
+        {
+          "name": "Add to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"60d5f9f8b8e5a72d4c8b4567\",\n  \"quantity\": 2,\n  \"variant\": {\n    \"size\": \"M\",\n    \"color\": \"Black\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cart/add",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "add"]
+            }
+          }
+        },
+        {
+          "name": "Update Cart Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cart/item/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "item", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        },
+        {
+          "name": "Remove from Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/item/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "item", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/clear",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "clear"]
+            }
+          }
+        },
+        {
+          "name": "Apply Coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"couponCode\": \"SAVE10\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cart/apply-coupon",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "apply-coupon"]
+            }
+          }
+        }
+      ]
+    },
+    
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shippingAddress\": {\n    \"fullName\": \"John Doe\",\n    \"phoneNumber\": \"0712345678\",\n    \"addressLine1\": \"123 Main Street\",\n    \"city\": \"Nairobi\",\n    \"county\": \"Nairobi\",\n    \"postalCode\": \"00100\"\n  },\n  \"paymentMethod\": \"mpesa\",\n  \"notes\": \"Please deliver after 5pm\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/my-orders?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "my-orders"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/my-orders/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "my-orders", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        },
+        {
+          "name": "Track Order",                
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/orders/track/LW-240101-0001",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "track", "LW-240101-0001"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/60d5f9f8b8e5a72d4c8b4567/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "60d5f9f8b8e5a72d4c8b4567", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Initiate M-Pesa Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"60d5f9f8b8e5a72d4c8b4567\",\n  \"phoneNumber\": \"0712345678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/mpesa/initiate",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "mpesa", "initiate"]
+            }
+          }
+        },
+        {
+          "name": "Create Stripe Payment Intent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"60d5f9f8b8e5a72d4c8b4567\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/stripe/create-intent",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "stripe", "create-intent"]
+            }
+          }
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/verify/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "verify", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/history",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "history"]
+            }
+          }
+        }
+      ]
+    },
+    
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Get Product Reviews",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reviews/product/60d5f9f8b8e5a72d4c8b4567?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "product", "60d5f9f8b8e5a72d4c8b4567"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"60d5f9f8b8e5a72d4c8b4567\",\n  \"rating\": 5,\n  \"title\": \"Excellent Product!\",\n  \"comment\": \"This jacket is amazing. Great quality and fast delivery.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["reviews"]
+            }
+          }
+        },
+        {
+          "name": "Update Review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Updated review: Still great, but shipping was a bit slow.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reviews/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        },
+        {
+          "name": "Delete Review",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reviews/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        },
+        {
+          "name": "Mark Review Helpful",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/reviews/60d5f9f8b8e5a72d4c8b4567/helpful",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "60d5f9f8b8e5a72d4c8b4567", "helpful"]
+            }
+          }
+        }
+      ]
+    },
+    
+    {
+      "name": "Wishlist",
+      "item": [
+        {
+          "name": "Get Wishlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wishlist",
+              "host": ["{{base_url}}"],
+              "path": ["wishlist"]
+            }
+          }
+        },
+        {
+          "name": "Add to Wishlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"60d5f9f8b8e5a72d4c8b4567\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wishlist/add",
+              "host": ["{{base_url}}"],
+              "path": ["wishlist", "add"]
+            }
+          }
+        },
+        {
+          "name": "Remove from Wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wishlist/remove/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["wishlist", "remove", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        },
+        {
+          "name": "Check in Wishlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wishlist/check/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["wishlist", "check", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        },
+        {
+          "name": "Clear Wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wishlist/clear",
+              "host": ["{{base_url}}"],
+              "path": ["wishlist", "clear"]
+            }
+          }
+        },
+        {
+          "name": "Generate Share Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wishlist/share",
+              "host": ["{{base_url}}"],
+              "path": ["wishlist", "share"]
+            }
+          }
+        }
+      ]
+    },
+    
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Category Tree",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/categories/tree",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "tree"]
+            }
+          }
+        },
+        {
+          "name": "Get Featured Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/categories/featured",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "featured"]
+            }
+          }
+        },
+        {
+          "name": "Get Category by Slug",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/categories/mens-clothing",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "mens-clothing"]
+            }
+          }
+        },
+        {
+          "name": "Create Category (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Men's Clothing\",\n  \"description\": \"Premium men's fashion\",\n  \"isFeatured\": true,\n  \"sortOrder\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"]
+            }
+          }
+        },
+        {
+          "name": "Update Category (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Men's Premium Clothing\",\n  \"isFeatured\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/categories/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        },
+        {
+          "name": "Delete Category (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories/60d5f9f8b8e5a72d4c8b4567",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "60d5f9f8b8e5a72d4c8b4567"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "dashboard", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Recent Activity",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/dashboard/activity?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "dashboard", "activity"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sales Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/sales?startDate=2024-01-01&endDate=2024-12-31&groupBy=month",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "reports", "sales"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                },
+                {
+                  "key": "groupBy",
+                  "value": "month"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Inventory Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/inventory",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "reports", "inventory"]
+            }
+          }
+        },
+        {
+          "name": "System Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/system/health",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "system", "health"]
+            }
+          }
+        }
+      ]
+    },
+    
+    {
+      "name": "Uploads",
+      "item": [
+        {
+          "name": "Upload Single Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",                
+              "formdata": [                       
+                {
+                  "key": "image",                 
+                  "type": "file",                 
+                  "src": "/path/to/image.jpg"    
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/uploads/image",
+              "host": ["{{base_url}}"],
+              "path": ["uploads", "image"]
+            }
+          }
+        },
+        {
+          "name": "Upload Multiple Images",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",               
+                  "type": "file",
+                  "src": "/path/to/image1.jpg"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": "/path/to/image2.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/uploads/images",
+              "host": ["{{base_url}}"],
+              "path": ["uploads", "images"]
+            }
+          }
+        },
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": "/path/to/avatar.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/uploads/avatar",
+              "host": ["{{base_url}}"],
+              "path": ["uploads", "avatar"]
+            }
+          }
+        },
+        {
+          "name": "Delete Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/uploads/image/legacy-wear/image-public-id",
+              "host": ["{{base_url}}"],
+              "path": ["uploads", "image", "legacy-wear", "image-public-id"]
+            }
+          }
+        }
+      ]
+    },
+    
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",    
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",                             
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+<!-- utils/emailTemplates/shippingUpdate.hbs -->
+<!-- Shipping update email template - sent when order status changes or shipping information is updated -->
+<!-- Keeps customers informed about their order progress with tracking information -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- ========== METADATA ========== -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shipping Update</title>
+  
+  <!-- ========== STYLES ========== -->
+  <style>
+    /* Base styles - consistent across all email templates */
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* Header with brand logo */
+    .header {
+      text-align: center;
+      padding: 20px 0;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1a1a1a;
+    }
+    
+    /* Main content area */
+    .content {
+      padding: 30px 0;
+    }
+    
+    /* Status badge - prominently displays current order state */
+    .status-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      background-color: #4caf50;        /* Green for positive status */
+      color: #fff;
+      border-radius: 4px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    
+    /* Shipping details box - contains tracking information */
+    .shipping-details {
+      background-color: #f9f9f9;        /* Light gray background for contrast */
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    /* Call-to-action button */
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #000;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    /* Footer section */
+    .footer {
+      text-align: center;
+      padding: 20px 0;
+      font-size: 12px;
+      color: #666;
+      border-top: 1px solid #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <!-- ========== HEADER ========== -->
+  <div class="header">
+    <div class="logo">LEGACY WEAR</div>
+    <!-- Brand identity maintained across all communications -->
+  </div>
+  
+  <!-- ========== MAIN CONTENT ========== -->
+  <div class="content">
+    <!-- Clear subject line - indicates order status update -->
+    <h1>Order Update</h1>
+    
+    <!-- Personal greeting using Handlebars variable -->
+    <p>Hello {{name}},</p>
+    <!-- {{name}} is replaced with customer's name for personalization -->
+    
+    <p>Your order #{{orderNumber}} has been updated:</p>
+    <!-- {{orderNumber}} format: LW-240315-0042 -->
+    
+    <!-- ========== STATUS BADGE ========== -->
+    <div style="text-align: center;">
+      <span class="status-badge">{{status}}</span>
+      <!-- {{status}} displays current order status (e.g., "shipped", "delivered", "processing") -->
+    </div>
+    
+    <!-- ========== STATUS MESSAGE ========== -->
+    <p>{{statusMessage}}</p>
+    <!-- {{statusMessage}} provides human-readable explanation:
+         - "Your order has been shipped!"
+         - "Your order has been delivered!"
+         - "Your order is being prepared for shipment." -->
+    
+    <!-- ========== SHIPPING DETAILS (CONDITIONAL) ========== -->
+    {{#if trackingNumber}}
+    <!-- Only show shipping details if tracking number exists -->
+    <div class="shipping-details">
+      <strong>Tracking Number:</strong> {{trackingNumber}}<br>
+      <!-- {{trackingNumber}} from courier (e.g., "1Z999AA10123456784") -->
+      
+      {{#if trackingUrl}}
+        <!-- Link to track package on courier's website -->
+        <a href="{{trackingUrl}}">Track your package →</a><br>
+      {{/if}}
+      
+      {{#if estimatedDelivery}}
+        <!-- Estimated delivery date from courier -->
+        <strong>Estimated Delivery:</strong> {{estimatedDelivery}}
+      {{/if}}
+    </div>
+    {{/if}}
+    
+    <!-- ========== TRACKING BUTTON ========== -->
+    <div style="text-align: center;">
+      <a href="{{trackingUrl}}" class="button">Track Order</a>
+      <!-- {{trackingUrl}} links to order tracking page or courier tracking -->
+    </div>
+    
+    <p>Thank you for shopping with Legacy Wear!</p>
+    
+    <!-- Sign-off -->
+    <p>Best regards,<br>
+    The Legacy Wear Team</p>
+  </div>
+  
+  <!-- ========== FOOTER ========== -->
+  <div class="footer">
+    <p>&copy; {{year}} Legacy Wear. All rights reserved.</p>
+  </div>
+</body>
+</html>

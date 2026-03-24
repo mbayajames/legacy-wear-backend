@@ -1,0 +1,123 @@
+<!-- utils/emailTemplates/welcome.hbs -->
+<!-- Welcome email template for new users - Handlebars (.hbs) format -->
+<!-- Sent automatically after user registration to welcome them to Legacy Wear -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- ========== METADATA ========== -->
+  <meta charset="utf-8">
+  <!-- Ensures proper rendering on mobile devices (responsive design) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Email subject line (set by email service, not in template) -->
+  <title>Welcome to Legacy Wear</title>
+  
+  <!-- ========== STYLES ========== -->
+  <!-- Inline styles are used for email compatibility -->
+  <!-- Many email clients strip <style> tags, but we include them as fallback -->
+  <!-- Most email templates use inline styles via tools like MJML or inline CSS -->
+  <style>
+    /* Base styles for email body */
+    body {
+      font-family: Arial, sans-serif;      /* Professional, widely supported font */
+      line-height: 1.6;                     /* Improved readability */
+      color: #333;                          /* Dark gray text - easier on eyes than black */
+      max-width: 600px;                     /* Standard email width - looks good on all screens */
+      margin: 0 auto;                       /* Center the email content */
+      padding: 20px;                        /* Spacing around content */
+    }
+    
+    /* Header section styles */
+    .header {
+      text-align: center;                   /* Center the logo */
+      padding: 20px 0;                      /* Vertical spacing */
+      border-bottom: 2px solid #f0f0f0;    /* Subtle separator line */
+    }
+    
+    /* Logo styling */
+    .logo {
+      font-size: 24px;                      /* Prominent but not overwhelming */
+      font-weight: bold;                    /* Makes logo stand out */
+      color: #1a1a1a;                       /* Almost black - professional */
+    }
+    
+    /* Main content area */
+    .content {
+      padding: 30px 0;                      /* Space around content */
+    }
+    
+    /* Call-to-action button styling */
+    .button {
+      display: inline-block;                /* Allows padding and margins */
+      padding: 12px 24px;                   /* Comfortable click area */
+      background-color: #000;               /* Black background - brand color */
+      color: #fff;                          /* White text for contrast */
+      text-decoration: none;                /* Remove underline from link */
+      border-radius: 4px;                   /* Slightly rounded corners */
+      margin: 20px 0;                       /* Space around button */
+    }
+    
+    /* Footer section */
+    .footer {
+      text-align: center;                   /* Center footer text */
+      padding: 20px 0;                      /* Vertical spacing */
+      font-size: 12px;                      /* Smaller text for footer */
+      color: #666;                          /* Gray text - less prominent */
+      border-top: 1px solid #f0f0f0;       /* Separator line */
+    }
+  </style>
+</head>
+<body>
+  <!-- ========== HEADER SECTION ========== -->
+  <div class="header">
+    <div class="logo">LEGACY WEAR</div>
+    <!-- Brand logo/name prominently displayed -->
+  </div>
+  
+  <!-- ========== MAIN CONTENT ========== -->
+  <div class="content">
+    <!-- Personal greeting using Handlebars variable -->
+    <h1>Welcome to Legacy Wear, {{name}}! 👋</h1>
+    <!-- {{name}} is dynamically replaced with user's actual name -->
+    <!-- The 👋 emoji adds a friendly, welcoming touch -->
+    
+    <p>Thank you for joining Legacy Wear. We're excited to have you as part of our community.</p>
+    
+    <p>At Legacy Wear, we offer premium fashion items that help you express your unique style. 
+    From elegant clothing to stunning accessories, we've curated the best collections just for you.</p>
+    
+    <!-- Call-to-Action Button -->
+    <div style="text-align: center;">
+      <a href="{{loginUrl}}" class="button">Start Shopping</a>
+      <!-- {{loginUrl}} is dynamically inserted by email service -->
+      <!-- Links directly to login page for quick access -->
+    </div>
+    
+    <!-- Value proposition - what users can do on the platform -->
+    <p>Here's what you can do:</p>
+    <ul>
+      <li>Browse our latest collections</li>
+      <li>Save items to your wishlist</li>
+      <li>Enjoy exclusive member discounts</li>
+      <li>Track your orders in real-time</li>
+    </ul>
+    
+    <!-- Support information - builds trust -->
+    <p>If you have any questions, feel free to contact our support team. We're here to help!</p>
+    
+    <!-- Sign-off with personal touch -->
+    <p>Happy shopping!<br>
+    The Legacy Wear Team</p>
+  </div>
+  
+  <!-- ========== FOOTER ========== -->
+  <div class="footer">
+    <!-- Dynamic year - automatically updates -->
+    <p>&copy; {{year}} Legacy Wear. All rights reserved.</p>
+    <!-- Shows recipient email (for transparency) -->
+    <p>This email was sent to {{email}}</p>
+    <!-- Note: Add unsubscribe link here in production -->
+  </div>
+</body>
+</html>

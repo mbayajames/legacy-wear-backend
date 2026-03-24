@@ -1,0 +1,198 @@
+<!-- utils/emailTemplates/orderConfirmation.hbs -->
+<!-- Order confirmation email template - sent immediately after customer places an order -->
+<!-- Contains detailed order information including items, pricing, and tracking link -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- ========== METADATA ========== -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation</title>
+  
+  <!-- ========== STYLES ========== -->
+  <style>
+    /* Base styles - consistent across all email templates */
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* Header with brand logo */
+    .header {
+      text-align: center;
+      padding: 20px 0;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1a1a1a;
+    }
+    
+    /* Main content area */
+    .content {
+      padding: 30px 0;
+    }
+    
+    /* Order summary box - highlights key order info */
+    .order-details {
+      background-color: #f9f9f9;      /* Light gray background */
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    /* Product table styles */
+    .order-table {
+      width: 100%;
+      border-collapse: collapse;        /* Removes spacing between cells */
+      margin: 20px 0;
+    }
+    
+    /* Table cell styling */
+    .order-table th,
+    .order-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #eee;    /* Subtle separator between rows */
+    }
+    
+    /* Table header styling */
+    .order-table th {
+      background-color: #f5f5f5;        /* Slightly darker background for headers */
+    }
+    
+    /* Totals section - aligned to the right */
+    .totals {
+      text-align: right;
+      margin-top: 20px;
+    }
+    
+    /* Final total amount - prominently displayed */
+    .total {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    
+    /* Call-to-action button */
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #000;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    /* Footer section */
+    .footer {
+      text-align: center;
+      padding: 20px 0;
+      font-size: 12px;
+      color: #666;
+      border-top: 1px solid #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <!-- ========== HEADER ========== -->
+  <div class="header">
+    <div class="logo">LEGACY WEAR</div>
+    <!-- Brand identity maintained across all emails -->
+  </div>
+  
+  <!-- ========== MAIN CONTENT ========== -->
+  <div class="content">
+    <!-- Clear subject line - confirms order was received -->
+    <h1>Order Confirmation</h1>
+    
+    <!-- Personal greeting using Handlebars variable -->
+    <p>Hello {{name}},</p>
+    <!-- {{name}} is replaced with customer's name for personalization -->
+    
+    <p>Thank you for your order! We've received your order and are processing it.</p>
+    
+    <!-- ========== ORDER SUMMARY BOX ========== -->
+    <div class="order-details">
+      <strong>Order Number:</strong> #{{orderNumber}}<br>
+      <!-- {{orderNumber}} format: LW-240315-0042 -->
+      <strong>Order Date:</strong> {{orderDate}}
+      <!-- {{orderDate}} formatted as "March 15, 2024" -->
+    </div>
+    
+    <!-- ========== ORDER ITEMS TABLE ========== -->
+    <table class="order-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Handlebars each loop - iterates through order items -->
+        {{#each items}}
+        <tr>
+          <td>{{this.name}}</td>        <!-- Product name (e.g., "Classic T-Shirt") -->
+          <td>{{this.quantity}}</td>     <!-- Quantity purchased -->
+          <td>KES {{formatCurrency this.price}}</td>  <!-- Unit price with formatting -->
+          <td>KES {{formatCurrency this.total}}</td>   <!-- Line total = price × quantity -->
+        </tr>
+        {{/each}}
+        <!-- {{#each}} creates a row for each item in the order -->
+      </tbody>
+    </table>
+    
+    <!-- ========== PRICE BREAKDOWN ========== -->
+    <div class="totals">
+      <p>Subtotal: KES {{formatCurrency subtotal}}</p>
+      <!-- Subtotal before any additions -->
+      
+      <!-- Conditional shipping display - only shown if shipping cost > 0 -->
+      {{#if shipping}}
+      <p>Shipping: KES {{formatCurrency shipping}}</p>
+      {{/if}}
+      
+      <!-- Conditional tax display -->
+      {{#if tax}}
+      <p>Tax: KES {{formatCurrency tax}}</p>
+      {{/if}}
+      
+      <!-- Conditional discount display - only shown if discount applied -->
+      {{#if discount}}
+      <p>Discount: -KES {{formatCurrency discount}}</p>
+      {{/if}}
+      
+      <!-- Final total - prominently displayed -->
+      <p class="total">Total: KES {{formatCurrency total}}</p>
+    </div>
+    
+    <!-- ========== CALL-TO-ACTION BUTTON ========== -->
+    <div style="text-align: center;">
+      <a href="{{orderUrl}}" class="button">View Order Details</a>
+      <!-- {{orderUrl}} links to order tracking page in user account -->
+    </div>
+    
+    <!-- Shipping notification and support information -->
+    <p>We'll notify you when your order ships. If you have any questions, 
+    please contact our support team.</p>
+    
+    <!-- Thank you message -->
+    <p>Thank you for shopping with us!<br>
+    The Legacy Wear Team</p>
+  </div>
+  
+  <!-- ========== FOOTER ========== -->
+  <div class="footer">
+    <p>&copy; {{year}} Legacy Wear. All rights reserved.</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+# openapi: 3.0.0
+# OpenAPI Specification (OAS) version 3.0.0 - defines the structure and documentation for the Legacy Wear API
+# This file serves as the comprehensive API documentation, enabling automatic documentation generation,
+# client SDK generation, and API testing
+
+# ========== API METADATA ==========
+openapi: 3.0.0  # OpenAPI specification version (industry standard for REST API documentation)
+
+info:  # API information block - provides high-level description of the API
+  title: Legacy Wear API  # Name of the API
+  description: |  # Multi-line description using YAML pipe syntax
+    Legacy Wear E-commerce Platform API Documentation
+    
+    ## Features
+    * **Authentication** - JWT-based authentication with Google OAuth
+    * **Products** - Product catalog with search, filtering, and pagination
+    * **Cart** - Shopping cart management for both guest and logged-in users
+    * **Orders** - Order processing, tracking, and history
+    * **Payments** - M-Pesa and Stripe payment integration
+    * **Reviews** - Product reviews and ratings
+    * **Wishlist** - Save favorite items
+    * **Admin** - Dashboard statistics and management
+    
+    ## Authentication
+    Most endpoints require a JWT token. Include it in the Authorization header:
+    `Authorization: Bearer <your-jwt-token>`
+    
+    ## Rate Limiting
+    - General API: 100 requests per 15 minutes
+    - Authentication: 5 attempts per 15 minutes
+    - Upload: 50 uploads per hour
+    
+    ## Response Format
+    All responses follow this structure:
+    ```json
+    {
+      "status": "success|fail|error",
+      "data": {},
+      "message": "Optional message",
+      "errors": []
+    }
